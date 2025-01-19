@@ -1,4 +1,4 @@
-\name: GitHub to Discord Notifications
+name: GitHub to Discord Notifications
 
 on:
   issues:
