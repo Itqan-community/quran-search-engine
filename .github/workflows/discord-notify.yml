@@ -57,24 +57,42 @@ jobs:
               }' \
           $DISCORD_WEBHOOK
 
-      - name: Notify Discord for Issue Comments
+           - name: Notify Discord for Issue Comments
         if: github.event_name == 'issue_comment'
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
           curl -X POST -H "Content-Type: application/json" \
           -d '{
-                "content": "💬 New comment on issue #${{ github.event.issue.number }} by ${{ github.actor }}",
+                "content": "**📢 New Comment Posted**",
                 "embeds": [
                   {
-                    "title": "Comment",
+                    "title": "💬 Comment on Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}",
                     "url": "${{ github.event.comment.html_url }}",
-                    "description": "${{ github.event.comment.body }}",
-                    "color": 16711680
+                    "description": "``` ${{ github.event.comment.body }} ```",
+                    "color": 3447003,
+                    "fields": [
+                      {
+                        "name": "Repository",
+                        "value": "[${{ github.repository }}](https://github.com/${{ github.repository }})",
+                        "inline": true
+                      },
+                      {
+                        "name": "Author",
+                        "value": "[${{ github.actor }}](https://github.com/${{ github.actor }})",
+                        "inline": true
+                      }
+                    ],
+                    "footer": {
+                      "text": "GitHub Action Notification",
+                      "icon_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+                    },
+                    "timestamp": "${{ github.event.comment.updated_at }}"
                   }
                 ]
               }' \
           $DISCORD_WEBHOOK
+
 
       - name: Notify Discord for Project Card Events
         if: github.event_name == 'project_card'
