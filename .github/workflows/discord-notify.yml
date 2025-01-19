@@ -1,4 +1,4 @@
-name: GitHub to Discord Notifications
+\name: GitHub to Discord Notifications
 
 on:
   issues:
@@ -9,8 +9,6 @@ on:
     types: [created]
   project_card:
     types: [created, moved, deleted]
-  projects_v2_item:
-    types: [created, edited, moved, deleted]
   push:
   create:
   delete:
@@ -101,32 +99,6 @@ jobs:
                       {
                         "name": "Column ID",
                         "value": "From `${{ github.event.changes.column_id.from || 'N/A' }}` to `${{ github.event.project_card.column_id }}`",
-                        "inline": true
-                      }
-                    ]
-                  }
-                ]
-              }' \
-          $DISCORD_WEBHOOK
-
-      - name: Notify Discord for Project V2 Item Updates
-        if: github.event_name == 'projects_v2_item'
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H "Content-Type: application/json" \
-          -d '{
-                "content": "**📌 Project V2 Task Update**",
-                "embeds": [
-                  {
-                    "title": "Task Updated",
-                    "url": "https://github.com/${{ github.repository }}/projects",
-                    "description": "**${{ github.event.projects_v2_item.content.title || 'No description provided' }}**",
-                    "color": 16753920,
-                    "fields": [
-                      {
-                        "name": "Action",
-                        "value": "${{ github.event.action }}",
                         "inline": true
                       }
                     ]
