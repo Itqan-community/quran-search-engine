@@ -10,8 +10,9 @@ on:
   project_card:
     types: [created, moved, deleted]
   push:
-  repository:
-    types: [created, deleted, archived, unarchived, publicized, privatized]
+  create: # Triggers when a new branch or tag is created
+  delete: # Triggers when a branch or tag is deleted
+  public: # Triggers when the repository is made public
 
 jobs:
   notify-discord:
@@ -113,8 +114,8 @@ jobs:
               }' \
           $DISCORD_WEBHOOK
 
-      - name: Notify Discord for Repository Events
-        if: github.event_name == 'repository'
+      - name: Notify Discord for Repository Changes
+        if: github.event_name == 'create' || github.event_name == 'delete' || github.event_name == 'public'
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
@@ -125,7 +126,7 @@ jobs:
                   {
                     "title": "Repository Update",
                     "url": "${{ github.event.repository.html_url }}",
-                    "description": "Repository has been ${{ github.event.action }}",
+                    "description": "Repository event occurred: `${{ github.event.action }}`",
                     "color": 8359053
                   }
                 ]
