@@ -1,27 +1,132 @@
-name: Send Issue Comments to Discord
+name: GitHub to Discord Notifications
 
 on:
+  issues:
+    types: [opened, closed, reopened]
+  pull_request:
+    types: [opened, closed, reopened]
   issue_comment:
     types: [created]
+  project_card:
+    types: [created, moved, deleted]
+  push:
+  repository:
+    types: [created, deleted, archived, unarchived, publicized, privatized]
 
 jobs:
   notify-discord:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Send comment to Discord
+      - name: Notify Discord for Issues
+        if: github.event_name == 'issues'
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
           curl -X POST -H "Content-Type: application/json" \
           -d '{
-                "content": "New comment on issue #${{ github.event.issue.number }} by ${{ github.actor }}",
+                "content": "📝 Issue #${{ github.event.issue.number }} ${{ github.event.action }} by ${{ github.actor }}",
+                "embeds": [
+                  {
+                    "title": "${{ github.event.issue.title }}",
+                    "url": "${{ github.event.issue.html_url }}",
+                    "description": "${{ github.event.issue.body || 'No description provided' }}",
+                    "color": 3447003
+                  }
+                ]
+              }' \
+          $DISCORD_WEBHOOK
+
+      - name: Notify Discord for Pull Requests
+        if: github.event_name == 'pull_request'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H "Content-Type: application/json" \
+          -d '{
+                "content": "🔀 Pull Request #${{ github.event.pull_request.number }} ${{ github.event.action }} by ${{ github.actor }}",
+                "embeds": [
+                  {
+                    "title": "Pull Request",
+                    "url": "${{ github.event.pull_request.html_url }}",
+                    "description": "${{ github.event.pull_request.title }}",
+                    "color": 8311585
+                  }
+                ]
+              }' \
+          $DISCORD_WEBHOOK
+
+      - name: Notify Discord for Issue Comments
+        if: github.event_name == 'issue_comment'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H "Content-Type: application/json" \
+          -d '{
+                "content": "💬 New comment on issue #${{ github.event.issue.number }} by ${{ github.actor }}",
                 "embeds": [
                   {
                     "title": "Comment",
                     "url": "${{ github.event.comment.html_url }}",
                     "description": "${{ github.event.comment.body }}",
                     "color": 16711680
+                  }
+                ]
+              }' \
+          $DISCORD_WEBHOOK
+
+      - name: Notify Discord for Project Card Events
+        if: github.event_name == 'project_card'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H "Content-Type: application/json" \
+          -d '{
+                "content": "📌 Project Card ${{ github.event.action }} by ${{ github.actor }}",
+                "embeds": [
+                  {
+                    "title": "Project Update",
+                    "url": "https://github.com/${{ github.repository }}/projects/1",
+                    "description": "A card has been ${{ github.event.action }} in the project board.",
+                    "color": 16753920
+                  }
+                ]
+              }' \
+          $DISCORD_WEBHOOK
+
+      - name: Notify Discord for Push Events
+        if: github.event_name == 'push'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H "Content-Type: application/json" \
+          -d '{
+                "content": "🚀 Code pushed to branch `${{ github.ref }}` by ${{ github.actor }}",
+                "embeds": [
+                  {
+                    "title": "Commit Messages",
+                    "url": "${{ github.event.compare }}",
+                    "description": "${{ github.event.head_commit.message }}",
+                    "color": 65280
+                  }
+                ]
+              }' \
+          $DISCORD_WEBHOOK
+
+      - name: Notify Discord for Repository Events
+        if: github.event_name == 'repository'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H "Content-Type: application/json" \
+          -d '{
+                "content": "📁 Repository event: `${{ github.event.action }}` by ${{ github.actor }}",
+                "embeds": [
+                  {
+                    "title": "Repository Update",
+                    "url": "${{ github.event.repository.html_url }}",
+                    "description": "Repository has been ${{ github.event.action }}",
+                    "color": 8359053
                   }
                 ]
               }' \
