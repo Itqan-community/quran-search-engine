@@ -1,0 +1,28 @@
+name: Send Issue Comments to Discord
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  notify-discord:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send comment to Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H "Content-Type: application/json" \
+          -d '{
+                "content": "New comment on issue #${{ github.event.issue.number }} by ${{ github.actor }}",
+                "embeds": [
+                  {
+                    "title": "Comment",
+                    "url": "${{ github.event.comment.html_url }}",
+                    "description": "${{ github.event.comment.body }}",
+                    "color": 16711680
+                  }
+                ]
+              }' \
+          $DISCORD_WEBHOOK
