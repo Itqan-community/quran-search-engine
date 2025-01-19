@@ -164,3 +164,40 @@ jobs:
                 ]
               }' \
           $DISCORD_WEBHOOK
+
+      - name: Notify Discord for Project Card Updates
+        if: github.event_name == 'project_card'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H "Content-Type: application/json" \
+          -d '{
+                "content": "**📌 Task Moved in Project Board**",
+                "embeds": [
+                  {
+                    "title": "Project Task Updated",
+                    "url": "https://github.com/${{ github.repository }}/projects/1",
+                    "description": "**${{ github.event.project_card.note || 'No description provided' }}**",
+                    "color": 16753920,
+                    "fields": [
+                      {
+                        "name": "Action",
+                        "value": "${{ github.event.action }}",
+                        "inline": true
+                      },
+                      {
+                        "name": "Column Name",
+                        "value": "${{ github.event.changes.column_id.from }} → ${{ github.event.project_card.column_id }}",
+                        "inline": true
+                      }
+                    ],
+                    "footer": {
+                      "text": "GitHub Project Notification",
+                      "icon_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+                    },
+                    "timestamp": "${{ github.event.project_card.updated_at }}"
+                  }
+                ]
+              }' \
+          $DISCORD_WEBHOOK
+
