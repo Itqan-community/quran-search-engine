@@ -9,6 +9,8 @@ on:
     types: [created]
   project_card:
     types: [created, moved, deleted]
+  projects_v2_item:
+    types: [created, edited, moved, deleted]
   push:
   create:
   delete:
@@ -32,24 +34,7 @@ jobs:
                     "title": "Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}",
                     "url": "${{ github.event.issue.html_url }}",
                     "description": "``` ${{ github.event.issue.body || 'No description provided' }} ```",
-                    "color": 3447003,
-                    "fields": [
-                      {
-                        "name": "Repository",
-                        "value": "[${{ github.repository }}](https://github.com/${{ github.repository }})",
-                        "inline": true
-                      },
-                      {
-                        "name": "Author",
-                        "value": "[${{ github.actor }}](https://github.com/${{ github.actor }})",
-                        "inline": true
-                      }
-                    ],
-                    "footer": {
-                      "text": "GitHub Action Notification",
-                      "icon_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
-                    },
-                    "timestamp": "${{ github.event.issue.updated_at }}"
+                    "color": 3447003
                   }
                 ]
               }' \
@@ -68,24 +53,7 @@ jobs:
                     "title": "Pull Request #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}",
                     "url": "${{ github.event.pull_request.html_url }}",
                     "description": "``` ${{ github.event.pull_request.body || 'No description provided' }} ```",
-                    "color": 8311585,
-                    "fields": [
-                      {
-                        "name": "Repository",
-                        "value": "[${{ github.repository }}](https://github.com/${{ github.repository }})",
-                        "inline": true
-                      },
-                      {
-                        "name": "Author",
-                        "value": "[${{ github.actor }}](https://github.com/${{ github.actor }})",
-                        "inline": true
-                      }
-                    ],
-                    "footer": {
-                      "text": "GitHub Action Notification",
-                      "icon_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
-                    },
-                    "timestamp": "${{ github.event.pull_request.updated_at }}"
+                    "color": 8311585
                   }
                 ]
               }' \
@@ -104,24 +72,64 @@ jobs:
                     "title": "Comment on Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}",
                     "url": "${{ github.event.comment.html_url }}",
                     "description": "``` ${{ github.event.comment.body }} ```",
-                    "color": 16711680,
+                    "color": 16711680
+                  }
+                ]
+              }' \
+          $DISCORD_WEBHOOK
+
+      - name: Notify Discord for Project Card Updates
+        if: github.event_name == 'project_card'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H "Content-Type: application/json" \
+          -d '{
+                "content": "**📌 Project Card Update**",
+                "embeds": [
+                  {
+                    "title": "Task Updated",
+                    "url": "https://github.com/${{ github.repository }}/projects/1",
+                    "description": "**${{ github.event.project_card.note || 'No description provided' }}**",
+                    "color": 16753920,
                     "fields": [
                       {
-                        "name": "Repository",
-                        "value": "[${{ github.repository }}](https://github.com/${{ github.repository }})",
+                        "name": "Action",
+                        "value": "${{ github.event.action }}",
                         "inline": true
                       },
                       {
-                        "name": "Author",
-                        "value": "[${{ github.actor }}](https://github.com/${{ github.actor }})",
+                        "name": "Column ID",
+                        "value": "From `${{ github.event.changes.column_id.from || 'N/A' }}` to `${{ github.event.project_card.column_id }}`",
                         "inline": true
                       }
-                    ],
-                    "footer": {
-                      "text": "GitHub Action Notification",
-                      "icon_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
-                    },
-                    "timestamp": "${{ github.event.comment.updated_at }}"
+                    ]
+                  }
+                ]
+              }' \
+          $DISCORD_WEBHOOK
+
+      - name: Notify Discord for Project V2 Item Updates
+        if: github.event_name == 'projects_v2_item'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H "Content-Type: application/json" \
+          -d '{
+                "content": "**📌 Project V2 Task Update**",
+                "embeds": [
+                  {
+                    "title": "Task Updated",
+                    "url": "https://github.com/${{ github.repository }}/projects",
+                    "description": "**${{ github.event.projects_v2_item.content.title || 'No description provided' }}**",
+                    "color": 16753920,
+                    "fields": [
+                      {
+                        "name": "Action",
+                        "value": "${{ github.event.action }}",
+                        "inline": true
+                      }
+                    ]
                   }
                 ]
               }' \
@@ -164,40 +172,3 @@ jobs:
                 ]
               }' \
           $DISCORD_WEBHOOK
-
-      - name: Notify Discord for Project Card Updates
-        if: github.event_name == 'project_card'
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H "Content-Type: application/json" \
-          -d '{
-                "content": "**📌 Task Moved in Project Board**",
-                "embeds": [
-                  {
-                    "title": "Project Task Updated",
-                    "url": "https://github.com/${{ github.repository }}/projects/1",
-                    "description": "**${{ github.event.project_card.note || 'No description provided' }}**",
-                    "color": 16753920,
-                    "fields": [
-                      {
-                        "name": "Action",
-                        "value": "${{ github.event.action }}",
-                        "inline": true
-                      },
-                      {
-                        "name": "Column Name",
-                        "value": "${{ github.event.changes.column_id.from }} → ${{ github.event.project_card.column_id }}",
-                        "inline": true
-                      }
-                    ],
-                    "footer": {
-                      "text": "GitHub Project Notification",
-                      "icon_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
-                    },
-                    "timestamp": "${{ github.event.project_card.updated_at }}"
-                  }
-                ]
-              }' \
-          $DISCORD_WEBHOOK
-
